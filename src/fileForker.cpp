@@ -4,6 +4,7 @@
 #include "../interface/helpers.h"
 #include <sys/stat.h>
 #include <iostream>
+#include <algorithm>
 #include <sys/types.h>
 #include <stdexcept>
 #include "TString.h"

@@ -19,6 +19,8 @@
 #include "../interface/metaInfo.h"
 #include "classes/DelphesClasses.h"
 #include <fstream>
+#include <iostream>
+#include <iomanip>
 #include "TInterpreter.h"
 #include <sys/wait.h>
 

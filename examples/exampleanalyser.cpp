@@ -24,8 +24,8 @@ public:
 	exampleanalyser():d_ana::basicAnalyzer(){}
 	~exampleanalyser(){}
 
-
-
+        void postProcess(){}
+       
 private:
 	/*
 	 *
@@ -81,6 +81,9 @@ private:
 
 
 };
+
+
+
 
 
 int main(){

@@ -28,6 +28,7 @@ public:
 	exampleanalyser():d_ana::basicAnalyzer(){}
 	~exampleanalyser(){}
 
+        void postProcess(){}
 
 
 private:

@@ -32,14 +32,19 @@ int main(int argc, char **argv) {
         d_ana::dBranchHandler<Vertex> vertex(&tree,"Vertex");
 
        
+        float c_light = 3.0e8;
+
         TH1F *massZ = new TH1F("massZ", "", 20, 60, 110);
-        TH1F *massN = new TH1F("massN", "", 20, 400, 1200);
-        TH1F *dtvertexhist = new TH1F("dtvertexhist", "", 40, -20e-9, 20e-9);
-        TH1F *dtleptonhist = new TH1F("dtleptonhist", "", 40, -20e-9, 20e-9);
-        TH1F *dthist = new TH1F("dthist", "", 40, -20e-9, 20e-9);
-        TH1F *dlvertexhist = new TH1F("dlvertexhist", "", 40, 0, 40);
-        TH1F *dlleptonhist = new TH1F("dlleptonhist", "", 40, 0, 40);
+        TH1F *massN = new TH1F("massN", "", 20, 200, 2200);
+        TH1F *dtvertexhist = new TH1F("dtvertexhist", "", 40, -2e-9, 2e-9);
+        TH1F *dtleptonhist = new TH1F("dtleptonhist", "", 40, -2e-9, 2e-9);
+        TH1F *dthist = new TH1F("dthist", "", 40, -2e-9, 2e-9);
+        TH1F *dlvertexhist = new TH1F("dlvertexhist", "", 40, 0, 500);
+        TH1F *dlleptonhist = new TH1F("dlleptonhist", "", 40, 0, 500);
         TH1F *dlhist = new TH1F("dlhist", "", 40, 0, 40);
+        TH1F *d0vertexhist = new TH1F("d0vertexhist", "", 40, 0, 500);
+        TH1F *d0leptonhist = new TH1F("d0leptonhist", "", 40, 0, 500);
+        TH1F *d0hist = new TH1F("d0hist", "", 40, 0, 40);
 
         size_t nevents = tree.entries();
 	for(size_t i=0;i<nevents;i++) {
@@ -117,7 +122,7 @@ int main(int argc, char **argv) {
                 }
 
                 if(index_vertex == -1) continue;
-                if(index_muon_leading != -1 && fabs(mass_muon_stored) < 20) {
+                if(index_muon_leading != -1) {
                     massZ->Fill(mass_muon_stored);
                     float xl = (skimmedmuons.at(index_muon_leading).X + skimmedmuons.at(index_muon_trailing).X)/2.0;
                     float yl = (skimmedmuons.at(index_muon_leading).Y + skimmedmuons.at(index_muon_trailing).Y)/2.0;
@@ -133,19 +138,28 @@ int main(int argc, char **argv) {
                     dlvertexhist->Fill(sqrt(xv*xv + yv*yv + zv*zv));
                     dlleptonhist->Fill(sqrt(xl*xl + yl*yl + zl*zl));
                     dlhist->Fill(sqrt((xl-xv)*(xl-xv) + (yl-yv)*(yl-yv) + (zl-zv)*(zl-zv)));
-
+                    d0vertexhist->Fill(sqrt(xv*xv + yv*yv));
+                    d0leptonhist->Fill(sqrt(xl*xl + yl*yl));
+                    d0hist->Fill(sqrt((xl-xv)*(xl-xv) + (yl-yv)*(yl-yv)));
                     TLorentzVector a, b, c, d;
                     a.SetPtEtaPhiM(skimmedmuons.at(index_muon_leading).PT, skimmedmuons.at(index_muon_leading).Eta, skimmedmuons.at(index_muon_leading).Phi, MASS_MU);
                     b.SetPtEtaPhiM(skimmedmuons.at(index_muon_trailing).PT, skimmedmuons.at(index_muon_trailing).Eta, skimmedmuons.at(index_muon_trailing).Phi, MASS_MU);
-                    TVector3 boostvector((xl-xv)/(tl-tv), (yl-yv)/(tl-tv), (zl-zv)/(tl-tv));
-                    a.Boost(boostvector);
-                    b.Boost(boostvector);
-                    c = a+b; 
-                    d.SetPtEtaPhiM(c.Pt(), -c.Eta(), c.Phi() + TMath::Pi(), 1.0);
-                    float reco_mass = (a+b+d).M(); 
-                    massN->Fill(reco_mass);
+                    float betax = (xl-xv)/((tl-tv)*1e3*c_light);
+                    float betay = (yl-yv)/((tl-tv)*1e3*c_light);
+                    float betaz = (zl-zv)/((tl-tv)*1e3*c_light);
+                    float gamma = 1.0/sqrt(1.0-(betax * betax + betay * betay + betaz * betaz));
+                    TVector3 boostvector(betax, betay, betaz);
+                    //TVector3 boostvector((xl-xv)/(tl-tv), (yl-yv)/(tl-tv), (zl-zv)/(tl-tv));
+                    if(boostvector.Mag() < 1 ) { 
+                        a.Boost(-boostvector);
+                        b.Boost(-boostvector);
+                        c = a+b; 
+                        d.SetPtEtaPhiM(c.Pt(), -c.Eta(), c.Phi() + TMath::Pi(), 1.0);
+                        float reco_mass = (a+b+d).M(); 
+                        massN->Fill(reco_mass);
+                    }
                 }
-                if(index_ele_leading != -1 && fabs(mass_ele_stored) < 20) {
+                if(index_ele_leading != -1) {
                     massZ->Fill(mass_ele_stored);
                     float xl = (skimmedelecs.at(index_ele_leading).X + skimmedelecs.at(index_ele_trailing).X)/2.0;
                     float yl = (skimmedelecs.at(index_ele_leading).Y + skimmedelecs.at(index_ele_trailing).Y)/2.0;
@@ -161,23 +175,32 @@ int main(int argc, char **argv) {
                     dlvertexhist->Fill(sqrt(xv*xv + yv*yv + zv*zv));
                     dlleptonhist->Fill(sqrt(xl*xl + yl*yl + zl*zl));
                     dlhist->Fill(sqrt((xl-xv)*(xl-xv) + (yl-yv)*(yl-yv) + (zl-zv)*(zl-zv)));
-                    
+                    d0vertexhist->Fill(sqrt(xv*xv + yv*yv));
+                    d0leptonhist->Fill(sqrt(xl*xl + yl*yl));
+                    d0hist->Fill(sqrt((xl-xv)*(xl-xv) + (yl-yv)*(yl-yv)));
                     TLorentzVector a, b, c, d;
-                    a.SetPtEtaPhiM(skimmedmuons.at(index_ele_leading).PT, skimmedmuons.at(index_ele_leading).Eta, skimmedmuons.at(index_ele_leading).Phi, MASS_MU);
-                    b.SetPtEtaPhiM(skimmedmuons.at(index_ele_trailing).PT, skimmedmuons.at(index_ele_trailing).Eta, skimmedmuons.at(index_ele_trailing).Phi, MASS_MU);
-                    TVector3 boostvector((xl-xv)/(tl-tv), (yl-yv)/(tl-tv), (zl-zv)/(tl-tv));
-                    a.Boost(boostvector);
-                    b.Boost(boostvector);
-                    c = a+b; 
-                    d.SetPtEtaPhiM(c.Pt(), -c.Eta(), c.Phi() + TMath::Pi(), 1.0);
-                    float reco_mass = (a+b+d).M(); 
-                    massN->Fill(reco_mass);
+                    a.SetPtEtaPhiM(skimmedelecs.at(index_ele_leading).PT, skimmedelecs.at(index_ele_leading).Eta, skimmedelecs.at(index_ele_leading).Phi, MASS_E);
+                    b.SetPtEtaPhiM(skimmedelecs.at(index_ele_trailing).PT, skimmedelecs.at(index_ele_trailing).Eta, skimmedelecs.at(index_ele_trailing).Phi, MASS_E);
+                    float betax = (xl-xv)/((tl-tv)*1e3*c_light);
+                    float betay = (yl-yv)/((tl-tv)*1e3*c_light);
+                    float betaz = (zl-zv)/((tl-tv)*1e3*c_light);
+                    float gamma = 1.0/sqrt(1.0-(betax * betax + betay * betay + betaz * betaz));
+                    TVector3 boostvector(betax, betay, betaz);
+                    //TVector3 boostvector((xl-xv)/(tl-tv), (yl-yv)/(tl-tv), (zl-zv)/(tl-tv));
+                    if(boostvector.Mag() < 1 ) { 
+                        a.Boost(-boostvector);
+                        b.Boost(-boostvector);
+                        c = a+b; 
+                        d.SetPtEtaPhiM(c.Pt(), -c.Eta(), c.Phi() + TMath::Pi(), 1.0);
+                        float reco_mass = (a+b+d).M(); 
+                        massN->Fill(reco_mass);
+                    } 
 		}			
  
         }
 
 
-        TFile *f = new TFile("file.root", "recreate");
+        TFile *f = new TFile("file2.root", "recreate");
         f->cd();
         massZ->Write();
         dtvertexhist->Write(); 
@@ -186,6 +209,10 @@ int main(int argc, char **argv) {
         dlvertexhist->Write();
         dlleptonhist->Write();
         dlhist->Write();
+        massN->Write();
+        d0vertexhist->Write();
+        d0leptonhist->Write();
+        d0hist->Write();
         massN->Write();
         f->Close();
 

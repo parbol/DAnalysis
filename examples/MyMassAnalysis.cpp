@@ -6,6 +6,7 @@
 #include "TLorentzVector.h"
 #include "TH1F.h"
 #include "TMath.h"
+#include <string>
 
 
 #include <iostream>
@@ -26,19 +27,23 @@ bool compareMu(Muon a, Muon b) {return (a.PT < b.PT);}
 //***************************************************************************************************************//
 int main(int argc, char **argv) {
 
-	d_ana::tTreeHandler tree(argv[1], "Delphes");
+
+
+        std::string inputFile(argv[1]);
+        std::string outputFile(argv[2]);
+
+	d_ana::tTreeHandler tree(inputFile.c_str(), "Delphes");
         d_ana::dBranchHandler<Electron> elecs(&tree,"Electron");
         d_ana::dBranchHandler<Muon> muons(&tree,"MuonLoose");
         d_ana::dBranchHandler<Vertex> vertex(&tree,"Vertex");
-
        
-        float c_light = 3.0e8;
+        const Double_t c_light = 2.99792458E8;
 
         TH1F *massZ = new TH1F("massZ", "", 20, 60, 110);
-        TH1F *massN = new TH1F("massN", "", 20, 200, 2200);
+        TH1F *massN = new TH1F("massN", "", 20, 400, 1200);
         TH1F *dtvertexhist = new TH1F("dtvertexhist", "", 40, -2e-9, 2e-9);
         TH1F *dtleptonhist = new TH1F("dtleptonhist", "", 40, -2e-9, 2e-9);
-        TH1F *dthist = new TH1F("dthist", "", 40, -2e-9, 2e-9);
+        TH1F *dthist = new TH1F("dthist", "", 40, 0, 2e-9);
         TH1F *dlvertexhist = new TH1F("dlvertexhist", "", 40, 0, 500);
         TH1F *dlleptonhist = new TH1F("dlleptonhist", "", 40, 0, 500);
         TH1F *dlhist = new TH1F("dlhist", "", 40, 0, 40);
@@ -49,9 +54,7 @@ int main(int argc, char **argv) {
         size_t nevents = tree.entries();
 	for(size_t i=0;i<nevents;i++) {
 
-
                 tree.setEntry(i); 
-                
                //======================Electrons===============================
                 size_t index_ele_leading = -1, index_ele_trailing = -1;
                 float mass_ele_stored = -100000;
@@ -200,7 +203,7 @@ int main(int argc, char **argv) {
         }
 
 
-        TFile *f = new TFile("file2.root", "recreate");
+        TFile *f = new TFile(outputFile.c_str(), "recreate");
         f->cd();
         massZ->Write();
         dtvertexhist->Write(); 
@@ -215,7 +218,6 @@ int main(int argc, char **argv) {
         d0hist->Write();
         massN->Write();
         f->Close();
-
         return 1;
 
 }

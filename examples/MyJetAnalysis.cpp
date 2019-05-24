@@ -187,7 +187,7 @@ int main(int argc, char **argv) {
                     jetPUPPIDXY_[nJetsPUPPI_] = distancexy;
                     jetPUPPIDZ_[nJetsPUPPI_] = distancez;
                     jetPUPPIDT_[nJetsPUPPI_] = distancet ;
-                    jetPUPPITcorr_[nJetsPUPPI_] = distancetMTD - 1e-3 * distance/c_light;
+                    jetPUPPITcorr_[nJetsPUPPI_] = distancetMTD - 1e-3 * distancetMTD/c_light;
                     jetPUPPITuncorr_[nJetsPUPPI_] = distancetMTD;
                     nJetsPUPPI_++; 
                 }

@@ -22,6 +22,9 @@ using namespace d_ana;
 //*******************************************************************************//
 //Some global variables for the tree
 Int_t nJetsPUPPI_;
+Int_t nJetsPUPPI0p1_;
+Int_t nJetsPUPPI0p5_;
+Int_t nJetsPUPPI1p0_;
 Float_t jetPUPPIPT_[nJetsPUPPIMax];
 Float_t jetPUPPIEta_[nJetsPUPPIMax];
 Float_t jetPUPPIPhi_[nJetsPUPPIMax];
@@ -78,18 +81,26 @@ int main(int argc, char **argv) {
         std::string inputFile(argv[1]);
         std::string outputFile(argv[2]);
 
+        TFile fi(inputFile.c_str());
+        TH1F *n = (TH1F *)fi.Get("nEvents");
+        float number = n->GetBinContent(1);
+        fi.Close();
+
 	d_ana::tTreeHandler tree(inputFile.c_str(), "Delphes");
         d_ana::dBranchHandler<Jet> jets(&tree,"JetPUPPI");
         d_ana::dBranchHandler<Vertex> vertex(&tree,"Vertex");
         d_ana::dBranchHandler<Track> tracks(&tree,"EFlowTrack");
        
         const Double_t c_light = 2.99792458E8;
+
         TFile *f = new TFile(outputFile.c_str(), "recreate");
         f->cd();
 
         TTree *t1 = new TTree("t1","a simple Tree with simple variables");
         setTreeBranches(t1);
 
+        TH1F *nEvents = new TH1F("nEvents", "", 1, 0, 200);
+        nEvents->SetBinContent(1, number);
         TH1F *jdistance = new TH1F("jdistance", "", 50, 0, 200);
         TH1F *jdistancexy = new TH1F("jdistancexy", "", 50, 0, 200);
         TH1F *jt = new TH1F("jt", "", 50, 0, 1e-9);
@@ -147,6 +158,9 @@ int main(int argc, char **argv) {
                 if(jets.size() == 0) continue;
 
                 nJetsPUPPI_ = 0;
+                nJetsPUPPI0p1_ = 0;
+                nJetsPUPPI0p5_ = 0;
+                nJetsPUPPI1p0_ = 0;
  
                 for(int jetc = 0; jetc < jets.size(); jetc++){
                     if(jets.at(jetc)->PT < 20 ) continue;
@@ -167,6 +181,7 @@ int main(int argc, char **argv) {
                     float distancexy = sqrt( (x-vx) * (x-vx) + (y - vy) * (y - vy));
                     float distancez = z - vz;
                     float distancet = t - vt;
+                    float distanceMTD = sqrt( (xMTD-vx) * (xMTD-vx) + (yMTD - vy) * (yMTD - vy) + (zMTD - vz) * (zMTD - vz));
                     float distancetMTD = tMTD - vt;
                     jdistance->Fill(distance);
                     jdistancexy->Fill(distancexy);
@@ -187,14 +202,17 @@ int main(int argc, char **argv) {
                     jetPUPPIDXY_[nJetsPUPPI_] = distancexy;
                     jetPUPPIDZ_[nJetsPUPPI_] = distancez;
                     jetPUPPIDT_[nJetsPUPPI_] = distancet ;
-                    jetPUPPITcorr_[nJetsPUPPI_] = distancetMTD - 1e-3 * distancetMTD/c_light;
+                    jetPUPPITcorr_[nJetsPUPPI_] = distancetMTD - 1e-3 * distanceMTD/c_light;
                     jetPUPPITuncorr_[nJetsPUPPI_] = distancetMTD;
                     nJetsPUPPI_++; 
+                    if(jetPUPPITcorr_[nJetsPUPPI_] > 1e-10) nJetsPUPPI0p1_++;
+                    if(jetPUPPITcorr_[nJetsPUPPI_] > 5e-10) nJetsPUPPI0p5_++;
+                    if(jetPUPPITcorr_[nJetsPUPPI_] > 1e-9) nJetsPUPPI1p0_++;
                 }
                 t1->Fill();
         }
 
-
+        nEvents->Write();
         jdistance->Write();
         jdistancexy->Write();
         jt->Write();
@@ -213,6 +231,9 @@ void setTreeBranches(TTree *t1) {
 
  
   t1->Branch("nJetsPUPPI_",&nJetsPUPPI_,"nJetsPUPPI_/I");
+  t1->Branch("nJetsPUPPI0p1_",&nJetsPUPPI0p1_,"nJetsPUPPI0p1_/I");
+  t1->Branch("nJetsPUPPI0p5_",&nJetsPUPPI0p5_,"nJetsPUPPI0p5_/I");
+  t1->Branch("nJetsPUPPI1p0_",&nJetsPUPPI1p0_,"nJetsPUPPI1p0_/I");
   t1->Branch("jetPUPPIPT_", jetPUPPIPT_, "jetPUPPIPT_[nJetsPUPPI_]/F");
   t1->Branch("jetPUPPIEta_", jetPUPPIEta_, "jetPUPPIEta_[nJetsPUPPI_]/F");
   t1->Branch("jetPUPPIPhi_", jetPUPPIPhi_, "jetPUPPIPhi_[nJetsPUPPI_]/F");

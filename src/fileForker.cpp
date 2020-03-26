@@ -9,7 +9,7 @@
 #include "TString.h"
 #include <sys/wait.h>
 #include <signal.h>
-
+#include <algorithm>
 #include <execinfo.h>
 
 namespace d_ana{
